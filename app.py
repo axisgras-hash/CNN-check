@@ -18,9 +18,9 @@ MN_MODEL_PATH = "flower_mobilenet.h5"
 CLASSES_PATH = "classes.pkl"
 
 # 🔗 GOOGLE DRIVE DIRECT DOWNLOAD LINKS
-CNN_MODEL_URL = "https://drive.google.com/file/d/19IKok1KShqVLFOlr9TuwTPfPaCl4vEwo/view?usp=sharing"
-MN_MODEL_URL = "https://drive.google.com/file/d/1-wc8WHs2Qu_KAB6_33645FQ88Pc5onxC/view?usp=sharing"
-CLASSES_URL = "https://drive.google.com/file/d/1LfEQLVZRDu6jAHzgYI9SULdRKMowaLvA/view?usp=sharing"
+CNN_MODEL_URL = "https://drive.google.com/uc?id=19IKok1KShqVLFOlr9TuwTPfPaCl4vEwo"
+MN_MODEL_URL  = "https://drive.google.com/uc?id=1-wc8WHs2Qu_KAB6_33645FQ88Pc5onxC"
+CLASSES_URL   = "https://drive.google.com/uc?id=1LfEQLVZRDu6jAHzgYI9SULdRKMowaLvA"
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -161,4 +161,5 @@ st.markdown("""
 🔗 **LinkedIn:** https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
 🔗 **GitHub:** https://github.com/YOUR-GITHUB-USERNAME
 """)
+
 
