@@ -9,114 +9,155 @@ from PIL import Image
 # --------------------------------------------------
 # CONFIG
 # --------------------------------------------------
-IMG_SIZE = 150
-CONFIDENCE_THRESHOLD = 0.80  # below this → warn user
+IMG_SIZE_CNN = 150
+IMG_SIZE_MN = 224
+CONF_THRESHOLD = 0.65
 
-MODEL_PATH = "flower_cnn.h5"
+CNN_MODEL_PATH = "flower_cnn.h5"
+MN_MODEL_PATH = "flower_mobilenet.h5"
 CLASSES_PATH = "classes.pkl"
 
-MODEL_URL = "https://drive.google.com/uc?id=1SMVQryvXOTZ_X1Loq3AyFnpp3nx7reOj"
-CLASSES_URL = "PASTE_YOUR_CLASSES_PKL_DRIVE_LINK_HERE"
+# 🔗 GOOGLE DRIVE DIRECT DOWNLOAD LINKS
+CNN_MODEL_URL = "PASTE_CNN_MODEL_DRIVE_LINK"
+MN_MODEL_URL = "PASTE_MOBILENET_MODEL_DRIVE_LINK"
+CLASSES_URL = "PASTE_CLASSES_PKL_DRIVE_LINK"
 
 # --------------------------------------------------
-# PAGE SETUP
+# PAGE CONFIG
 # --------------------------------------------------
-st.set_page_config(page_title="Flower Classification", layout="centered")
+st.set_page_config(page_title="Flower Classification AI", layout="centered")
 
-st.title("🌸 Flower Classification using CNN")
-st.caption("Upload a flower image to predict its class")
+st.title("🌸 Flower Classification using Deep Learning")
+st.caption("CNN vs Transfer Learning (MobileNetV2) – Seminar Demonstration")
 
 # --------------------------------------------------
-# SIDEBAR (PROFESSIONAL UX)
+# SIDEBAR
 # --------------------------------------------------
-st.sidebar.title("ℹ️ About This App")
+st.sidebar.title("📌 About This App")
+st.sidebar.markdown("""
+### Models Used
+- 🧪 **Custom CNN** (trained from scratch)
+- 🚀 **MobileNetV2** (transfer learning)
 
-st.sidebar.markdown(
-    """
-**Supported Flower Classes:**
-- 🌼 Daisy  
-- 🌾 Dandelion  
-- 🌹 Roses  
-- 🌻 Sunflowers  
-- 🌷 Tulips  
+### Supported Flower Classes
+- Daisy  
+- Dandelion  
+- Roses  
+- Sunflowers  
+- Tulips  
 
-⚠️ **Important Note**  
-This model can predict **only the above flowers**.  
-Uploading other flowers (e.g. *lily, lotus*) may give **incorrect predictions**.
-"""
-)
+⚠️ Uploading other flowers (e.g. Lily, Lotus) may give **approximate results**.
+""")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(
-    "**How it works:**\n"
-    "- CNN trained on flower images\n"
-    "- Predicts closest known class\n"
-    "- Confidence shown for transparency"
-)
+st.sidebar.markdown("""
+### Why Two Models?
+- CNN → learning fundamentals  
+- MobileNet → better real-world accuracy  
+- Final prediction → robustness & honesty
+""")
 
 # --------------------------------------------------
-# DOWNLOAD MODEL & CLASSES
+# DOWNLOAD FILES IF NOT PRESENT
 # --------------------------------------------------
-if not os.path.exists(MODEL_PATH):
-    with st.spinner("Downloading model..."):
-        gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+def download_if_needed(url, path):
+    if not os.path.exists(path):
+        gdown.download(url, path, quiet=False)
 
-if not os.path.exists(CLASSES_PATH):
-    with st.spinner("Downloading class labels..."):
-        gdown.download(CLASSES_URL, CLASSES_PATH, quiet=False)
+download_if_needed(CNN_MODEL_URL, CNN_MODEL_PATH)
+download_if_needed(MN_MODEL_URL, MN_MODEL_PATH)
+download_if_needed(CLASSES_URL, CLASSES_PATH)
 
 # --------------------------------------------------
-# LOAD MODEL & CLASSES (CACHED)
+# LOAD MODELS (CACHED)
 # --------------------------------------------------
 @st.cache_resource
 def load_assets():
-    model = load_model(MODEL_PATH)
+    cnn_model = load_model(CNN_MODEL_PATH)
+    mn_model = load_model(MN_MODEL_PATH)
     with open(CLASSES_PATH, "rb") as f:
         classes = pickle.load(f)
-    return model, classes
+    return cnn_model, mn_model, classes
 
-model, classes = load_assets()
+cnn_model, mn_model, classes = load_assets()
 
 # --------------------------------------------------
 # IMAGE UPLOAD
 # --------------------------------------------------
 uploaded_file = st.file_uploader(
-    "📤 Drag & drop or browse a flower image",
-    type=["jpg", "jpeg", "png", "webp"],
-    accept_multiple_files=False
+    "📤 Upload a flower image (JPG / PNG / WEBP)",
+    type=["jpg", "jpeg", "png", "webp"]
 )
 
 # --------------------------------------------------
 # PREDICTION
 # --------------------------------------------------
-if uploaded_file is not None:
+if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, width=320, caption="Uploaded Image")
 
-    # Display image (controlled size)
-    st.image(image, caption="Uploaded Image", width=300)
+    # ----- CNN PREDICTION -----
+    img_cnn = image.resize((IMG_SIZE_CNN, IMG_SIZE_CNN))
+    arr_cnn = np.expand_dims(np.array(img_cnn) / 255.0, axis=0)
+    cnn_pred = cnn_model.predict(arr_cnn)[0]
+    cnn_idx = np.argmax(cnn_pred)
 
-    # Preprocess
-    image_resized = image.resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(image_resized) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-
-    # Predict
-    prediction = model.predict(img_array)
-    class_index = np.argmax(prediction)
-    confidence = float(np.max(prediction))
-
-    predicted_class = classes[class_index]
+    # ----- MobileNet PREDICTION -----
+    img_mn = image.resize((IMG_SIZE_MN, IMG_SIZE_MN))
+    arr_mn = np.expand_dims(np.array(img_mn) / 255.0, axis=0)
+    mn_pred = mn_model.predict(arr_mn)[0]
+    mn_idx = np.argmax(mn_pred)
 
     # --------------------------------------------------
-    # SMART OUTPUT LOGIC
+    # DISPLAY RESULTS
     # --------------------------------------------------
-    if confidence < CONFIDENCE_THRESHOLD:
+    st.subheader("🔍 Model-wise Predictions")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 🧪 Custom CNN")
+        st.write(f"**{classes[cnn_idx]}**")
+        st.write(f"Confidence: {cnn_pred[cnn_idx]*100:.2f}%")
+
+    with col2:
+        st.markdown("### 🚀 MobileNetV2")
+        st.write(f"**{classes[mn_idx]}**")
+        st.write(f"Confidence: {mn_pred[mn_idx]*100:.2f}%")
+
+    # --------------------------------------------------
+    # FINAL DECISION
+    # --------------------------------------------------
+    st.subheader("✅ Final Recommended Prediction")
+
+    if mn_pred[mn_idx] >= CONF_THRESHOLD:
+        final_class = classes[mn_idx]
+        final_conf = mn_pred[mn_idx]
+        source = "MobileNetV2 (Preferred)"
+    else:
+        final_class = classes[cnn_idx]
+        final_conf = cnn_pred[cnn_idx]
+        source = "Custom CNN (Fallback)"
+
+    if final_conf < CONF_THRESHOLD:
         st.warning(
-            f"⚠️ Low confidence prediction.\n\n"
-            f"Closest match: **{predicted_class}** ({confidence*100:.2f}%)\n\n"
-            "This image may **not belong to the trained flower classes**."
+            f"Low confidence result.\n\n"
+            f"Closest match: **{final_class}** ({final_conf*100:.2f}%)\n"
+            "Image may not belong to trained classes."
         )
     else:
-        st.success(f"🌼 Predicted Flower: **{predicted_class}**")
-        st.info(f"Confidence: **{confidence * 100:.2f}%**")
+        st.success(f"🌼 **{final_class}**")
+        st.info(f"Confidence: **{final_conf*100:.2f}%**")
+        st.caption(f"Decision Source: {source}")
 
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
+st.markdown("---")
+st.markdown("""
+**Made by:** Ankit Mishra  
+**Role:** Data Science & AI Trainer  
+
+🔗 **LinkedIn:** https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
+🔗 **GitHub:** https://github.com/YOUR-GITHUB-USERNAME
+""")
