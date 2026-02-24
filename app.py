@@ -17,7 +17,7 @@ CNN_MODEL_PATH = "flower_cnn.h5"
 MN_MODEL_PATH = "flower_mobilenet.keras"
 CLASSES_PATH = "classes.pkl"
 
-# 🔗 GOOGLE DRIVE DIRECT DOWNLOAD LINKS
+# ✅ DIRECT GOOGLE DRIVE LINKS
 CNN_MODEL_URL = "https://drive.google.com/uc?id=19IKok1KShqVLFOlr9TuwTPfPaCl4vEwo"
 MN_MODEL_URL  = "https://drive.google.com/uc?id=1fzzeifkH38vS_ziy5F2BaqO19FqII9nW"
 CLASSES_URL   = "https://drive.google.com/uc?id=1LfEQLVZRDu6jAHzgYI9SULdRKMowaLvA"
@@ -28,7 +28,7 @@ CLASSES_URL   = "https://drive.google.com/uc?id=1LfEQLVZRDu6jAHzgYI9SULdRKMowaLv
 st.set_page_config(page_title="Flower Classification AI", layout="centered")
 
 st.title("🌸 Flower Classification using Deep Learning")
-st.caption("CNN vs Transfer Learning (MobileNetV2) – Seminar Demonstration")
+st.caption("Custom CNN vs MobileNetV2 – Seminar Demonstration")
 
 # --------------------------------------------------
 # SIDEBAR
@@ -36,7 +36,7 @@ st.caption("CNN vs Transfer Learning (MobileNetV2) – Seminar Demonstration")
 st.sidebar.title("📌 About This App")
 st.sidebar.markdown("""
 ### Models Used
-- 🧪 **Custom CNN** (trained from scratch)
+- 🧪 **Custom CNN** (from scratch)
 - 🚀 **MobileNetV2** (transfer learning)
 
 ### Supported Flower Classes
@@ -46,23 +46,23 @@ st.sidebar.markdown("""
 - Sunflowers  
 - Tulips  
 
-⚠️ Uploading other flowers (e.g. Lily, Lotus) may give **approximate results**.
+⚠️ Other flower types or growth stages may give approximate results.
 """)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 ### Why Two Models?
 - CNN → learning fundamentals  
-- MobileNet → better real-world accuracy  
+- MobileNet → real-world robustness  
 - Disagreement handling → honest AI
 """)
 
 # --------------------------------------------------
-# SAFE DOWNLOAD FUNCTION (NEW)
+# SAFE DOWNLOAD FUNCTION
 # --------------------------------------------------
 def safe_download(url, path, min_size_mb=1):
     if os.path.exists(path):
-        if os.path.getsize(path) < min_size_mb * 1024 * 1024:
+        if min_size_mb > 0 and os.path.getsize(path) < min_size_mb * 1024 * 1024:
             os.remove(path)
         else:
             return
@@ -70,13 +70,19 @@ def safe_download(url, path, min_size_mb=1):
     with st.spinner(f"Downloading {path} ..."):
         gdown.download(url, path, quiet=False)
 
-    if not os.path.exists(path) or os.path.getsize(path) < min_size_mb * 1024 * 1024:
+    if min_size_mb > 0 and (
+        not os.path.exists(path)
+        or os.path.getsize(path) < min_size_mb * 1024 * 1024
+    ):
         st.error(f"❌ Failed to download valid file: {path}")
         st.stop()
 
+# --------------------------------------------------
+# DOWNLOAD FILES
+# --------------------------------------------------
 safe_download(CNN_MODEL_URL, CNN_MODEL_PATH, min_size_mb=5)
 safe_download(MN_MODEL_URL, MN_MODEL_PATH, min_size_mb=10)
-safe_download(CLASSES_URL, CLASSES_PATH, min_size_mb=0.01)
+safe_download(CLASSES_URL, CLASSES_PATH, min_size_mb=0)
 
 # --------------------------------------------------
 # LOAD MODELS (CACHED)
@@ -119,7 +125,7 @@ if uploaded_file:
     mn_idx = np.argmax(mn_pred)
 
     # --------------------------------------------------
-    # DISPLAY MODEL-WISE RESULTS
+    # MODEL-WISE OUTPUT
     # --------------------------------------------------
     st.subheader("🔍 Model-wise Predictions")
 
@@ -135,7 +141,7 @@ if uploaded_file:
         st.write(f"Confidence: {mn_pred[mn_idx]*100:.2f}%")
 
     # --------------------------------------------------
-    # CONSISTENCY CHECK (NEW – IMPORTANT)
+    # CONSISTENCY CHECK
     # --------------------------------------------------
     inconsistent_case = False
 
@@ -154,10 +160,9 @@ if uploaded_file:
 
     if inconsistent_case:
         st.info(
-            "Final prediction is withheld due to model disagreement.\n\n"
-            "This prevents confident but incorrect outputs."
+            "Final prediction withheld due to model disagreement.\n\n"
+            "This prevents confident but incorrect results."
         )
-
     else:
         if mn_pred[mn_idx] >= CONF_THRESHOLD:
             final_class = classes[mn_idx]
@@ -187,6 +192,6 @@ st.markdown("""
 **Made by:** Ankit Mishra  
 **Role:** Data Science & AI Trainer  
 
-🔗 **LinkedIn:** https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
-🔗 **GitHub:** https://github.com/YOUR-GITHUB-USERNAME
+🔗 LinkedIn: https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
+🔗 GitHub: https://github.com/YOUR-GITHUB-USERNAME
 """)
