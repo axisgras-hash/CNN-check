@@ -18,9 +18,9 @@ MN_MODEL_PATH = "flower_mobilenet.keras"
 CLASSES_PATH = "classes.pkl"
 
 # ✅ DIRECT GOOGLE DRIVE LINKS
-CNN_MODEL_URL = "https://drive.google.com/uc?id=19IKok1KShqVLFOlr9TuwTPfPaCl4vEwo"
-MN_MODEL_URL  = "https://drive.google.com/uc?id=1fzzeifkH38vS_ziy5F2BaqO19FqII9nW"
-CLASSES_URL   = "https://drive.google.com/uc?id=1LfEQLVZRDu6jAHzgYI9SULdRKMowaLvA"
+CLASSES_URL   = "https://drive.google.com/uc?id=1-juikjclAckEoUJfyDq9QTAKecPK4EXK"
+CNN_MODEL_URL = "https://drive.google.com/uc?id=1sn7Fv22Kq_XppVdbE0MWz1uxlY89wFNj"
+MN_MODEL_URL  = "https://drive.google.com/uc?id=1PCKj74UB2tvlt2fDgUggksXHHdBtv9nI"
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -144,13 +144,11 @@ if uploaded_file:
     # CONSISTENCY CHECK
     # --------------------------------------------------
     inconsistent_case = False
-
     if cnn_pred[cnn_idx] > 0.95 and mn_pred[mn_idx] < 0.75:
         inconsistent_case = True
         st.warning(
             "⚠️ High-confidence but inconsistent prediction.\n\n"
-            "This image may represent a variation not well covered in training data "
-            "(e.g., seed-stage flowers)."
+            "This image may represent a variation not well covered in training data."
         )
 
     # --------------------------------------------------
@@ -176,8 +174,7 @@ if uploaded_file:
         if final_conf < CONF_THRESHOLD:
             st.warning(
                 f"Low confidence result.\n\n"
-                f"Closest match: **{final_class}** ({final_conf*100:.2f}%)\n"
-                "Image may not belong to trained classes."
+                f"Closest match: **{final_class}** ({final_conf*100:.2f}%)"
             )
         else:
             st.success(f"🌼 **{final_class}**")
