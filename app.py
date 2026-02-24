@@ -21,23 +21,22 @@ CLASSES_URL = "PASTE_YOUR_CLASSES_PKL_DRIVE_LINK_HERE"
 # PAGE SETUP
 # --------------------------------------------------
 st.set_page_config(page_title="Flower Classification", layout="centered")
-
 st.title("🌸 Flower Classification using CNN")
 
-st.info(
-    "👉 You can **drag & drop** an image or click **Browse files**.\n\n"
-    "📱 On some devices, a file picker popup may open automatically (browser behavior)."
+st.caption(
+    "📤 Drag & drop an image or use camera. "
+    "On some devices, file picker popup is browser-controlled."
 )
 
 # --------------------------------------------------
-# DOWNLOAD MODEL & CLASSES IF NOT PRESENT
+# DOWNLOAD FILES IF NOT EXISTS
 # --------------------------------------------------
 if not os.path.exists(MODEL_PATH):
-    with st.spinner("Downloading model... please wait ⏳"):
+    with st.spinner("Downloading model..."):
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
 if not os.path.exists(CLASSES_PATH):
-    with st.spinner("Downloading class labels... please wait ⏳"):
+    with st.spinner("Downloading class labels..."):
         gdown.download(CLASSES_URL, CLASSES_PATH, quiet=False)
 
 # --------------------------------------------------
@@ -53,17 +52,21 @@ def load_assets():
 model, classes = load_assets()
 
 # --------------------------------------------------
-# INPUT OPTIONS
+# INPUT SECTION (SMALL LAYOUT)
 # --------------------------------------------------
-uploaded_file = st.file_uploader(
-    "📤 Upload Flower Image",
-    type=["jpg", "jpeg", "png"],
-    accept_multiple_files=False
-)
+col1, col2 = st.columns([1, 1])
 
-camera_image = st.camera_input("📸 Or take a photo using camera")
+with col1:
+    uploaded_file = st.file_uploader(
+        "📁 Upload Image",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=False
+    )
 
-# Decide which image to use
+with col2:
+    camera_image = st.camera_input("📷 Camera (small view)")
+
+# Decide input
 image_file = uploaded_file if uploaded_file is not None else camera_image
 
 # --------------------------------------------------
@@ -71,10 +74,17 @@ image_file = uploaded_file if uploaded_file is not None else camera_image
 # --------------------------------------------------
 if image_file is not None:
     image = Image.open(image_file).convert("RGB")
-    st.image(image, caption="Selected Image", use_column_width=True)
 
-    image = image.resize((IMG_SIZE, IMG_SIZE))
-    img_array = np.array(image) / 255.0
+    # 🔽 Reduce displayed image size
+    st.image(
+        image,
+        caption="Selected Image",
+        width=300   # <<< THIS CONTROLS DISPLAY SIZE
+    )
+
+    # Model preprocessing
+    image_resized = image.resize((IMG_SIZE, IMG_SIZE))
+    img_array = np.array(image_resized) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
     prediction = model.predict(img_array)
