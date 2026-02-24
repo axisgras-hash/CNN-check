@@ -82,7 +82,7 @@ model, classes = load_assets()
 # --------------------------------------------------
 uploaded_file = st.file_uploader(
     "📤 Drag & drop or browse a flower image",
-    type=["jpg", "jpeg", "png"],
+    type=["jpg", "jpeg", "png", "webp"],
     accept_multiple_files=False
 )
 
@@ -119,3 +119,4 @@ if uploaded_file is not None:
     else:
         st.success(f"🌼 Predicted Flower: **{predicted_class}**")
         st.info(f"Confidence: **{confidence * 100:.2f}%**")
+
