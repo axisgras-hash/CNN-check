@@ -1,6 +1,5 @@
 import streamlit as st
 import numpy as np
-import cv2
 import pickle
 import os
 import gdown
@@ -14,17 +13,12 @@ IMG_SIZE = 150
 MODEL_PATH = "flower_cnn.h5"
 CLASSES_PATH = "classes.pkl"
 
-# Your Google Drive direct download link
 MODEL_URL = "https://drive.google.com/uc?id=1SMVQryvXOTZ_X1Loq3AyFnpp3nx7reOj"
 
 # ---------------------------------------
 # PAGE CONFIG
 # ---------------------------------------
-st.set_page_config(
-    page_title="Flower Classification",
-    layout="centered"
-)
-
+st.set_page_config(page_title="Flower Classification", layout="centered")
 st.title("🌸 Flower Classification using CNN")
 st.write("Upload a flower image to predict its class")
 
@@ -63,12 +57,11 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    img = np.array(image)
-    img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
-    img = img / 255.0
-    img = np.expand_dims(img, axis=0)
+    image = image.resize((IMG_SIZE, IMG_SIZE))
+    img_array = np.array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
-    prediction = model.predict(img)
+    prediction = model.predict(img_array)
     class_index = np.argmax(prediction)
     confidence = np.max(prediction)
 
