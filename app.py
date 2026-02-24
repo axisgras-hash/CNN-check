@@ -6,33 +6,43 @@ import gdown
 from tensorflow.keras.models import load_model
 from PIL import Image
 
-# ---------------------------------------
+# --------------------------------------------------
 # CONFIG
-# ---------------------------------------
+# --------------------------------------------------
 IMG_SIZE = 150
+
 MODEL_PATH = "flower_cnn.h5"
 CLASSES_PATH = "classes.pkl"
 
 MODEL_URL = "https://drive.google.com/uc?id=1SMVQryvXOTZ_X1Loq3AyFnpp3nx7reOj"
+CLASSES_URL = "PASTE_YOUR_CLASSES_PKL_DRIVE_LINK_HERE"
 
-# ---------------------------------------
-# PAGE CONFIG
-# ---------------------------------------
+# --------------------------------------------------
+# PAGE SETUP
+# --------------------------------------------------
 st.set_page_config(page_title="Flower Classification", layout="centered")
-st.title("🌸 Flower Classification using CNN")
-st.write("Upload a flower image to predict its class")
 
-# ---------------------------------------
-# DOWNLOAD MODEL IF NOT EXISTS
-# ---------------------------------------
+st.title("🌸 Flower Classification using CNN")
+
+st.info(
+    "👉 You can **drag & drop** an image or click **Browse files**.\n\n"
+    "📱 On some devices, a file picker popup may open automatically (browser behavior)."
+)
+
+# --------------------------------------------------
+# DOWNLOAD MODEL & CLASSES IF NOT PRESENT
+# --------------------------------------------------
 if not os.path.exists(MODEL_PATH):
     with st.spinner("Downloading model... please wait ⏳"):
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
-    st.success("Model downloaded successfully ✅")
 
-# ---------------------------------------
+if not os.path.exists(CLASSES_PATH):
+    with st.spinner("Downloading class labels... please wait ⏳"):
+        gdown.download(CLASSES_URL, CLASSES_PATH, quiet=False)
+
+# --------------------------------------------------
 # LOAD MODEL & CLASSES (CACHED)
-# ---------------------------------------
+# --------------------------------------------------
 @st.cache_resource
 def load_assets():
     model = load_model(MODEL_PATH)
@@ -42,20 +52,26 @@ def load_assets():
 
 model, classes = load_assets()
 
-# ---------------------------------------
-# FILE UPLOAD
-# ---------------------------------------
+# --------------------------------------------------
+# INPUT OPTIONS
+# --------------------------------------------------
 uploaded_file = st.file_uploader(
     "📤 Upload Flower Image",
-    type=["jpg", "jpeg", "png"]
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=False
 )
 
-# ---------------------------------------
+camera_image = st.camera_input("📸 Or take a photo using camera")
+
+# Decide which image to use
+image_file = uploaded_file if uploaded_file is not None else camera_image
+
+# --------------------------------------------------
 # PREDICTION
-# ---------------------------------------
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+# --------------------------------------------------
+if image_file is not None:
+    image = Image.open(image_file).convert("RGB")
+    st.image(image, caption="Selected Image", use_column_width=True)
 
     image = image.resize((IMG_SIZE, IMG_SIZE))
     img_array = np.array(image) / 255.0
