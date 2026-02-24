@@ -14,12 +14,12 @@ IMG_SIZE_MN = 224
 CONF_THRESHOLD = 0.65
 
 CNN_MODEL_PATH = "flower_cnn.h5"
-MN_MODEL_PATH = "flower_mobilenet.h5"
+MN_MODEL_PATH = "flower_mobilenet.keras"
 CLASSES_PATH = "classes.pkl"
 
 # 🔗 GOOGLE DRIVE DIRECT DOWNLOAD LINKS
 CNN_MODEL_URL = "https://drive.google.com/uc?id=19IKok1KShqVLFOlr9TuwTPfPaCl4vEwo"
-MN_MODEL_URL  = "https://drive.google.com/uc?id=1-wc8WHs2Qu_KAB6_33645FQ88Pc5onxC"
+MN_MODEL_URL  = "https://drive.google.com/uc?id=1fzzeifkH38vS_ziy5F2BaqO19FqII9nW"
 CLASSES_URL   = "https://drive.google.com/uc?id=1LfEQLVZRDu6jAHzgYI9SULdRKMowaLvA"
 
 # --------------------------------------------------
@@ -161,5 +161,6 @@ st.markdown("""
 🔗 **LinkedIn:** https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
 🔗 **GitHub:** https://github.com/YOUR-GITHUB-USERNAME
 """)
+
 
 
