@@ -54,27 +54,37 @@ st.sidebar.markdown("""
 ### Why Two Models?
 - CNN → learning fundamentals  
 - MobileNet → better real-world accuracy  
-- Final prediction → robustness & honesty
+- Disagreement handling → honest AI
 """)
 
 # --------------------------------------------------
-# DOWNLOAD FILES IF NOT PRESENT
+# SAFE DOWNLOAD FUNCTION (NEW)
 # --------------------------------------------------
-def download_if_needed(url, path):
-    if not os.path.exists(path):
+def safe_download(url, path, min_size_mb=1):
+    if os.path.exists(path):
+        if os.path.getsize(path) < min_size_mb * 1024 * 1024:
+            os.remove(path)
+        else:
+            return
+
+    with st.spinner(f"Downloading {path} ..."):
         gdown.download(url, path, quiet=False)
 
-download_if_needed(CNN_MODEL_URL, CNN_MODEL_PATH)
-download_if_needed(MN_MODEL_URL, MN_MODEL_PATH)
-download_if_needed(CLASSES_URL, CLASSES_PATH)
+    if not os.path.exists(path) or os.path.getsize(path) < min_size_mb * 1024 * 1024:
+        st.error(f"❌ Failed to download valid file: {path}")
+        st.stop()
+
+safe_download(CNN_MODEL_URL, CNN_MODEL_PATH, min_size_mb=5)
+safe_download(MN_MODEL_URL, MN_MODEL_PATH, min_size_mb=10)
+safe_download(CLASSES_URL, CLASSES_PATH, min_size_mb=0.01)
 
 # --------------------------------------------------
 # LOAD MODELS (CACHED)
 # --------------------------------------------------
 @st.cache_resource
 def load_assets():
-    cnn_model = load_model(CNN_MODEL_PATH)
-    mn_model = load_model(MN_MODEL_PATH)
+    cnn_model = load_model(CNN_MODEL_PATH, compile=False)
+    mn_model = load_model(MN_MODEL_PATH, compile=False)
     with open(CLASSES_PATH, "rb") as f:
         classes = pickle.load(f)
     return cnn_model, mn_model, classes
@@ -96,25 +106,24 @@ if uploaded_file:
     image = Image.open(uploaded_file).convert("RGB")
     st.image(image, width=320, caption="Uploaded Image")
 
-    # ----- CNN PREDICTION -----
+    # ----- CNN -----
     img_cnn = image.resize((IMG_SIZE_CNN, IMG_SIZE_CNN))
     arr_cnn = np.expand_dims(np.array(img_cnn) / 255.0, axis=0)
     cnn_pred = cnn_model.predict(arr_cnn)[0]
     cnn_idx = np.argmax(cnn_pred)
 
-    # ----- MobileNet PREDICTION -----
+    # ----- MobileNet -----
     img_mn = image.resize((IMG_SIZE_MN, IMG_SIZE_MN))
     arr_mn = np.expand_dims(np.array(img_mn) / 255.0, axis=0)
     mn_pred = mn_model.predict(arr_mn)[0]
     mn_idx = np.argmax(mn_pred)
 
     # --------------------------------------------------
-    # DISPLAY RESULTS
+    # DISPLAY MODEL-WISE RESULTS
     # --------------------------------------------------
     st.subheader("🔍 Model-wise Predictions")
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### 🧪 Custom CNN")
         st.write(f"**{classes[cnn_idx]}**")
@@ -126,29 +135,49 @@ if uploaded_file:
         st.write(f"Confidence: {mn_pred[mn_idx]*100:.2f}%")
 
     # --------------------------------------------------
+    # CONSISTENCY CHECK (NEW – IMPORTANT)
+    # --------------------------------------------------
+    inconsistent_case = False
+
+    if cnn_pred[cnn_idx] > 0.95 and mn_pred[mn_idx] < 0.75:
+        inconsistent_case = True
+        st.warning(
+            "⚠️ High-confidence but inconsistent prediction.\n\n"
+            "This image may represent a variation not well covered in training data "
+            "(e.g., seed-stage flowers)."
+        )
+
+    # --------------------------------------------------
     # FINAL DECISION
     # --------------------------------------------------
     st.subheader("✅ Final Recommended Prediction")
 
-    if mn_pred[mn_idx] >= CONF_THRESHOLD:
-        final_class = classes[mn_idx]
-        final_conf = mn_pred[mn_idx]
-        source = "MobileNetV2 (Preferred)"
-    else:
-        final_class = classes[cnn_idx]
-        final_conf = cnn_pred[cnn_idx]
-        source = "Custom CNN (Fallback)"
-
-    if final_conf < CONF_THRESHOLD:
-        st.warning(
-            f"Low confidence result.\n\n"
-            f"Closest match: **{final_class}** ({final_conf*100:.2f}%)\n"
-            "Image may not belong to trained classes."
+    if inconsistent_case:
+        st.info(
+            "Final prediction is withheld due to model disagreement.\n\n"
+            "This prevents confident but incorrect outputs."
         )
+
     else:
-        st.success(f"🌼 **{final_class}**")
-        st.info(f"Confidence: **{final_conf*100:.2f}%**")
-        st.caption(f"Decision Source: {source}")
+        if mn_pred[mn_idx] >= CONF_THRESHOLD:
+            final_class = classes[mn_idx]
+            final_conf = mn_pred[mn_idx]
+            source = "MobileNetV2 (Preferred)"
+        else:
+            final_class = classes[cnn_idx]
+            final_conf = cnn_pred[cnn_idx]
+            source = "Custom CNN (Fallback)"
+
+        if final_conf < CONF_THRESHOLD:
+            st.warning(
+                f"Low confidence result.\n\n"
+                f"Closest match: **{final_class}** ({final_conf*100:.2f}%)\n"
+                "Image may not belong to trained classes."
+            )
+        else:
+            st.success(f"🌼 **{final_class}**")
+            st.info(f"Confidence: **{final_conf*100:.2f}%**")
+            st.caption(f"Decision Source: {source}")
 
 # --------------------------------------------------
 # FOOTER
@@ -161,6 +190,3 @@ st.markdown("""
 🔗 **LinkedIn:** https://www.linkedin.com/in/YOUR-LINKEDIN-ID  
 🔗 **GitHub:** https://github.com/YOUR-GITHUB-USERNAME
 """)
-
-
-
